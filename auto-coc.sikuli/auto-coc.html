@@ -1,0 +1,883 @@
+
+<html>
+   <head>
+      <style type="text/css">
+         .sikuli-code {
+            font-size: 20px;
+            font-family: "Osaka-mono", Monospace;
+            line-height: 1.5em;
+            display:table-cell;
+            white-space: pre-wrap;       /* css-3 */
+            white-space: -moz-pre-wrap !important;  /* Mozilla, since 1999 */
+            white-space: -pre-wrap;      /* Opera 4-6 */
+            white-space: -o-pre-wrap;    /* Opera 7 */
+            word-wrap: break-word;       /* Internet Explorer 5.5+ */
+            width: 99%;   /* remove horizontal scroll-bar when viewing in IE7 */
+         }
+         .sikuli-code img {
+            vertical-align: middle;
+            margin: 2px;
+            border: 1px solid #ccc;
+            padding: 2px;
+            -moz-border-radius: 5px;
+            -webkit-border-radius: 5px;
+            -moz-box-shadow: 1px 1px 1px gray;
+            -webkit-box-shadow: 1px 1px 2px gray;
+         }
+         .kw {
+            color: blue;
+         }
+         .skw {
+            color: rgb(63, 127, 127);
+         }
+
+         .str {
+            color: rgb(128, 0, 0);
+         }
+
+         .dig {
+            color: rgb(128, 64, 0);
+         }
+
+         .cmt {
+            color: rgb(200, 0, 200);
+         }
+
+         h2 {
+            display: inline;
+            font-weight: normal;
+         }
+
+         .info {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+            margin-bottom: 20px;
+            display: none;
+         }
+
+         a {
+            color: #9D2900;
+         }
+
+         body {
+            font-family: "Trebuchet MS", Arial, Sans-Serif;
+         }
+
+      </style>
+   </head>
+<body>
+<div class="info">
+<h2>auto-coc.sikuli\auto-coc.sikuli</h2> <a href="auto-coc.sikuli\auto-coc.zip">(Download this script)</a>
+</div>
+<pre class="sikuli-code">
+<span class="kw">from</span> datetime <span class="kw">import</span> *
+<span class="kw">from</span> math <span class="kw">import</span> *
+<span class="kw">from</span> random <span class="kw">import</span> *
+
+<span class="cmt">#cocWindow = False
+</span>
+<span class="cmt"># We are assuming BlueStacks is already running and
+</span><span class="cmt"># COC is loaded and ready to go (centered, zoomed out, etc.)
+</span>cocWindow = App(<span class="str">"Bluestacks"</span>).window(<span class="dig">0</span>)
+
+timestamps = {
+    <span class="str">'testing'</span>:              False,
+    <span class="str">'start'</span>:                False,
+    <span class="str">'trainTroops'</span>:          False,
+    <span class="str">'clearObstacles'</span>:       False,
+    <span class="str">'collectResources'</span>:     False,
+    <span class="str">'collectStats'</span>:         False,
+    <span class="str">'donateTroops'</span>:         False,
+    <span class="str">'_lastInteraction'</span>:     False
+}
+
+<span class="cmt"># Barbarians
+</span><span class="cmt"># Archers
+</span><span class="cmt"># Giants
+</span><span class="cmt"># Goblins
+</span><span class="cmt"># Wall Breakers
+</span><span class="cmt"># Balloons
+</span><span class="cmt"># Wizards
+</span><span class="cmt"># Healers
+</span><span class="cmt"># Dragons
+</span><span class="cmt"># P.E.K.K.A
+</span>
+myArmy = [<span class="dig">90</span>, <span class="dig">90</span>, <span class="dig">0</span>, <span class="dig">0</span>, <span class="dig">10</span>, <span class="dig">0</span>, <span class="dig">0</span>, <span class="dig">0</span>, <span class="dig">0</span>, <span class="dig">0</span>]     <span class="cmt"># Barch          90 Barbs, 90 Archers, 10 WB</span>
+<span class="cmt"># myArmy = [0, 80, 12, 44, 8, 0, 0, 0, 0, 0]       # Farming Mix    80 Archers, 12 Giants, 44 Goblins, 8 WB
+</span>
+trainTimes = [<span class="dig">20</span>, <span class="dig">25</span>, <span class="dig">120</span>, <span class="dig">30</span>, <span class="dig">120</span>, <span class="dig">480</span>, <span class="dig">480</span>, <span class="dig">900</span>, <span class="dig">1800</span>, <span class="dig">2700</span>]
+
+<span class="cmt"># TODO: Fix OCR (Make DE conditional on whether they are high enough to have DE)
+</span>minGoldToAttack = <span class="dig">100000</span>
+minElixirToAttack = <span class="dig">25000</span>
+minDeToAttack = <span class="dig">0</span>
+
+
+
+<span class="kw">def</span> attack():
+    <span class="kw">if</span> startAttacking() == False:
+        <span class="kw">return</span> False
+
+    <span class="kw">for</span> i <span class="kw">in</span> range(<span class="dig">0</span>, <span class="dig">20</span>):
+        <span class="kw">if</span> isGoodOpponent() == True:
+            <span class="kw">if</span> deployTroops() == True:
+                finishBattleAndGoHome()
+                <span class="kw">return</span> True
+            <span class="kw">else</span>:
+                <span class="kw">return</span> False
+        <span class="kw">else</span>:
+            <span class="kw">if</span> nextOpponent() == False:
+                <span class="kw">return</span> False
+
+    <span class="kw">return</span> True
+
+
+
+<span class="kw">def</span> startAttacking():
+    <span class="kw">try</span>:
+        cocWindow.<span class="skw">find</span>(<img src="1420258650866.png" />).<span class="skw">click</span>()
+        updateTimestamp(<span class="str">'_lastInteraction'</span>)
+        <span class="skw">sleep</span>(<span class="dig">1</span>)
+        cocWindow.<span class="skw">find</span>(<img src="1420258681129.png" />).<span class="skw">click</span>()
+        updateTimestamp(<span class="str">'_lastInteraction'</span>)
+        <span class="skw">sleep</span>(<span class="dig">1</span>)
+
+        <span class="kw">if</span> (cocWindow.exists(<img src="1420258722056.png" />)):
+            cocWindow.<span class="skw">find</span>(<img src="1420258740243.png" />).<span class="skw">click</span>()
+            updateTimestamp(<span class="str">'_lastInteraction'</span>)
+
+        cocWindow.<span class="skw">wait</span>(<img src="1420258809432.png" />, <span class="dig">30</span>)
+        <span class="kw">return</span> True
+    <span class="kw">except</span>:
+        <span class="kw">print</span> <span class="str">"Error starting the attack process"</span>
+        <span class="kw">return</span> False
+
+
+
+<span class="kw">def</span> nextOpponent():
+    cocWindow.<span class="skw">find</span>(<img src="1420259749784.png" />).<span class="skw">click</span>()
+    updateTimestamp(<span class="str">'_lastInteraction'</span>)
+    <span class="skw">sleep</span>(<span class="dig">3</span>)
+    cocWindow.<span class="skw">wait</span>(<img src="1420258809432.png" />, <span class="dig">30</span>)
+    <span class="skw">sleep</span>(<span class="dig">3</span>)
+
+    <span class="kw">return</span> True
+
+
+
+<span class="kw">def</span> isGoodOpponent():
+    <span class="cmt">## TODO: Test for high level TH/defense/walls/etc
+</span>    <span class="kw">try</span>:
+        goldRegion        = Region((cocWindow.x + <span class="dig">67</span>), (cocWindow.y + <span class="dig">112</span>), <span class="dig">135</span>, <span class="dig">28</span>)
+        elixirRegion      = Region((cocWindow.x + <span class="dig">64</span>), (cocWindow.y + <span class="dig">149</span>), <span class="dig">135</span>, <span class="dig">28</span>)
+        deRegion          = Region((cocWindow.x + <span class="dig">64</span>), (cocWindow.y + <span class="dig">188</span>), <span class="dig">125</span>, <span class="dig">28</span>)
+
+        gold = numberOCR(goldRegion, <span class="str">'opponentLoot'</span>)
+        elixir = numberOCR(elixirRegion, <span class="str">'opponentLoot'</span>)
+        de = numberOCR(deRegion, <span class="str">'opponentLoot'</span>)
+
+        <span class="kw">print</span> <span class="str">"Gold: "</span>, gold
+        <span class="kw">print</span> <span class="str">"Elixir: "</span>, elixir
+        <span class="kw">print</span> <span class="str">"Dark Elixir: "</span>, de
+
+        <span class="kw">if</span> gold &gt;= minGoldToAttack:
+            <span class="kw">if</span> elixir &gt;= minElixirToAttack:
+                <span class="kw">if</span> de &gt;= minDeToAttack:
+                    <span class="kw">return</span> True
+
+        <span class="kw">return</span> False
+    <span class="kw">except</span>:
+        <span class="kw">print</span> <span class="str">"isGoodOpponent() Something went wrong :("</span>
+        <span class="kw">print</span> sys.exc_info()[<span class="dig">0</span>]
+        <span class="kw">print</span> sys.exc_info()[<span class="dig">1</span>]
+        <span class="kw">return</span> False
+
+
+
+<span class="kw">def</span> deployTroops():
+    <span class="cmt"># TODO: Check for full-ish collectors and deploy troops differently if they exist (around all edges)
+</span>
+    <span class="kw">print</span> <span class="str">"[+] Deploying troops"</span>
+
+    <span class="kw">try</span>:
+        <span class="cmt"># landmark = cocWindow.find("attack_landmark.png")
+</span>        landmark = cocWindow.<span class="skw">find</span>(<img src="attack_landmark2.png" />)
+        landmark.highlight(<span class="dig">1</span>)
+
+        Settings.DelayAfterDrag = <span class="dig">0</span>
+        Settings.DelayBeforeDrop = <span class="dig">0.1</span>
+        Settings.MoveMouseDelay = <span class="dig">0.2</span>
+        <span class="skw">dragDrop</span>(landmark.getCenter(), Location(cocWindow.x + <span class="dig">68</span>, cocWindow.y + <span class="dig">462</span>))
+        updateTimestamp(<span class="str">'_lastInteraction'</span>)
+        Settings.DelayAfterDrag = <span class="dig">0.3</span>
+        Settings.DelayAfterDrop = <span class="dig">0.3</span>
+        Settings.MoveMouseDelay = <span class="dig">0.5</span>
+
+        landmark = cocWindow.<span class="skw">find</span>(<img src="attack_landmark2.png" />)
+        landmark.highlight(<span class="dig">1</span>)    <span class="cmt"># Necessary to prevent "flinging" the screen...</span>
+
+    <span class="kw">except</span>:
+        <span class="kw">print</span> <span class="str">"[!] Could not find attack landmark. Aborting attack."</span>
+        cocWindow.<span class="skw">find</span>(<img src="1420258809432.png" />).<span class="skw">click</span>()
+        updateTimestamp(<span class="str">'_lastInteraction'</span>)
+        <span class="kw">return</span> False
+
+    deployPoints = []
+    <span class="cmt"># deployPoints.append(Location((landmark.getX() - 70), (landmark.getY() + 250)))
+</span>    <span class="cmt"># deployPoints.append(Location((landmark.getX() - 40), (landmark.getY() + 210)))
+</span>    <span class="cmt"># deployPoints.append(Location((landmark.getX() + 18), (landmark.getY() + 165)))
+</span>    <span class="cmt"># deployPoints.append(Location((landmark.getX() + 70), (landmark.getY() + 125)))
+</span>    <span class="cmt"># deployPoints.append(Location((landmark.getX() + 130), (landmark.getY() + 75)))
+</span>    <span class="cmt"># deployPoints.append(Location((landmark.getX() + 175), (landmark.getY() + 45)))
+</span>    <span class="cmt"># deployPoints.append(Location((landmark.getX() + 225), (landmark.getY() + 10)))
+</span>    <span class="cmt"># deployPoints.append(Location((landmark.getX() + 265), (landmark.getY() - 20)))
+</span>    <span class="cmt"># deployPoints.append(Location((landmark.getX() + 320), (landmark.getY() - 64)))
+</span>    <span class="cmt"># deployPoints.append(Location((landmark.getX() - 30), (landmark.getY() + 420)))
+</span>
+    deployPoints.append(Location((landmark.getX() + <span class="dig">334</span>), (landmark.getY() + <span class="dig">146</span>)))
+    deployPoints.append(Location((landmark.getX() + <span class="dig">286</span>), (landmark.getY() + <span class="dig">113</span>)))
+    deployPoints.append(Location((landmark.getX() + <span class="dig">237</span>), (landmark.getY() + <span class="dig">78</span>)))
+    deployPoints.append(Location((landmark.getX() + <span class="dig">200</span>), (landmark.getY() + <span class="dig">47</span>)))
+    deployPoints.append(Location((landmark.getX() + <span class="dig">148</span>), (landmark.getY() + <span class="dig">14</span>)))
+    deployPoints.append(Location((landmark.getX() + <span class="dig">110</span>), (landmark.getY() - <span class="dig">20</span>)))
+    deployPoints.append(Location((landmark.getX() + <span class="dig">40</span>), (landmark.getY() - <span class="dig">80</span>)))
+    deployPoints.append(Location((landmark.getX() + <span class="dig">104</span>), (landmark.getY() - <span class="dig">130</span>)))
+    deployPoints.append(Location((landmark.getX() + <span class="dig">160</span>), (landmark.getY() - <span class="dig">169</span>)))
+    deployPoints.append(Location((landmark.getX() + <span class="dig">201</span>), (landmark.getY() - <span class="dig">204</span>)))
+    deployPoints.append(Location((landmark.getX() + <span class="dig">260</span>), (landmark.getY() - <span class="dig">248</span>)))
+    deployPoints.append(Location((landmark.getX() + <span class="dig">315</span>), (landmark.getY() - <span class="dig">290</span>)))
+    deployPoints.append(Location((landmark.getX() + <span class="dig">360</span>), (landmark.getY() - <span class="dig">325</span>)))
+    deployPoints.append(Location((landmark.getX() + <span class="dig">425</span>), (landmark.getY() - <span class="dig">372</span>)))
+
+ <span class="cmt">#   deployPoints.append(Location((landmark.getX() + 1000), (landmark.getY() + 241)))
+</span> <span class="cmt">#   deployPoints.append(Location((landmark.getX() + 1057), (landmark.getY() + 197)))
+</span> <span class="cmt">#   deployPoints.append(Location((landmark.getX() + 1130), (landmark.getY() + 138)))
+</span> <span class="cmt">#   deployPoints.append(Location((landmark.getX() + 1190), (landmark.getY() + 90)))
+</span> <span class="cmt">#   deployPoints.append(Location((landmark.getX() + 1251), (landmark.getY() + 29)))
+</span> <span class="cmt">#   deployPoints.append(Location((landmark.getX() + 1318), (landmark.getY() - 14)))
+</span> <span class="cmt">#   deployPoints.append(Location((landmark.getX() + 1352), (landmark.getY() - 42)))
+</span> <span class="cmt">#   deployPoints.append(Location((landmark.getX() + 1386), (landmark.getY() - 85)))
+</span> <span class="cmt">#   deployPoints.append(Location((landmark.getX() + 1351), (landmark.getY() - 122)))
+</span> <span class="cmt">#   deployPoints.append(Location((landmark.getX() + 1279), (landmark.getY() - 176)))
+</span> <span class="cmt">#   deployPoints.append(Location((landmark.getX() + 1229), (landmark.getY() - 213)))
+</span> <span class="cmt">#   deployPoints.append(Location((landmark.getX() + 1163), (landmark.getY() - 266)))
+</span> <span class="cmt">#   deployPoints.append(Location((landmark.getX() + 1100), (landmark.getY() - 312)))
+</span> <span class="cmt">#   deployPoints.append(Location((landmark.getX() + 1040), (landmark.getY() - 353)))
+</span>
+    Settings.MoveMouseDelay = <span class="dig">0.01</span>
+
+    <span class="kw">try</span>:
+        troops_barbarians     = cocWindow.<span class="skw">find</span>(<img src="troops_barbarians.png" />)
+    <span class="kw">except</span>:
+        troops_barbarians = False
+
+    <span class="kw">try</span>:
+        troops_archers        = cocWindow.<span class="skw">find</span>(<img src="troops_archers.png" />)
+    <span class="kw">except</span>:
+        troops_archers = False
+
+    <span class="kw">try</span>:
+        troops_wallbreakers   = cocWindow.<span class="skw">find</span>(<img src="troops_wallbreakers.png" />)
+    <span class="kw">except</span>:
+        troops_wallbreakers = False
+
+    <span class="kw">try</span>:
+        troops_clancastle     = cocWindow.<span class="skw">find</span>(<img src="troops_clancastle.png" />)
+    <span class="kw">except</span>:
+        troops_clancastle = False
+
+    <span class="kw">try</span>:
+        troops_barbking       = cocWindow.<span class="skw">find</span>(<img src="troops_barbking.png" />)
+    <span class="kw">except</span>:
+        troops_barbking = False
+
+    <span class="kw">try</span>:
+        troops_healspell      = cocWindow.<span class="skw">find</span>(<img src="troops_healspell.png" />)
+    <span class="kw">except</span>:
+        troops_healspell = False
+
+    left_lower = <span class="dig">0</span>
+    left_upper = ((len(deployPoints) / <span class="dig">2</span>) - <span class="dig">1</span>)
+    right_lower = (len(deployPoints) / <span class="dig">2</span>)
+    right_upper = (len(deployPoints) - <span class="dig">1</span>)
+
+    <span class="kw">print</span> <span class="str">"Left bounds: "</span>, left_lower, <span class="str">", "</span>, left_upper
+    <span class="kw">print</span> <span class="str">"Right bounds: "</span>, right_lower, <span class="str">", "</span>, right_upper
+
+    <span class="cmt"># Deploy the barbarians first
+</span>    <span class="kw">if</span> troops_barbarians != False:
+        troops_barbarians.<span class="skw">click</span>()
+
+        <span class="kw">for</span> i <span class="kw">in</span> range(<span class="dig">0</span>, myArmy[<span class="dig">0</span>]):
+            cocWindow.<span class="skw">click</span>(deployPoints[randint(left_lower, right_upper)])
+
+        <span class="cmt">#for i in range(0, (myArmy['barbarian'] / 2)):
+</span>        <span class="cmt">#    cocWindow.click(deployPoints[randint(right_lower, right_upper)])
+</span>
+    <span class="cmt"># Then the wallbreakers
+</span>    <span class="kw">if</span> troops_wallbreakers != False:
+        troops_wallbreakers.<span class="skw">click</span>()
+
+        <span class="kw">for</span> i <span class="kw">in</span> range(<span class="dig">0</span>, (myArmy[<span class="dig">4</span>] / <span class="dig">2</span>)):
+            loc = randint(left_lower, right_upper)
+            cocWindow.<span class="skw">click</span>(deployPoints[loc])
+            cocWindow.<span class="skw">click</span>(deployPoints[loc])
+
+    <span class="cmt"># Then deploy the archers
+</span>    <span class="kw">if</span> troops_archers != False:
+        troops_archers.<span class="skw">click</span>()
+
+        <span class="kw">for</span> i <span class="kw">in</span> range(<span class="dig">0</span>, myArmy[<span class="dig">1</span>]):
+            cocWindow.<span class="skw">click</span>(deployPoints[randint(left_lower, right_upper)])
+
+        <span class="cmt">#for i in range(0, (myArmy['archer'] / 2)):
+</span>        <span class="cmt">#    cocWindow.click(deployPoints[randint(right_lower, right_upper)])
+</span>
+    <span class="cmt"># Then the Barb King if available
+</span>    <span class="kw">if</span> troops_barbking != False:
+        troops_barbking.<span class="skw">click</span>()
+        cocWindow.<span class="skw">click</span>(deployPoints[randint(<span class="dig">0</span>, right_upper)])
+        <span class="skw">sleep</span>(<span class="dig">8</span>)
+        troops_barbking.<span class="skw">click</span>()
+
+    <span class="cmt"># Then clan castle troops if available
+</span>    <span class="kw">if</span> troops_clancastle != False:
+        troops_clancastle.<span class="skw">click</span>()
+        cocWindow.<span class="skw">click</span>(deployPoints[randint(<span class="dig">0</span>, right_upper)])
+
+    <span class="kw">print</span> <span class="str">"[+] Troops have all been deployed"</span>
+    updateTimestamp(<span class="str">'_lastInteraction'</span>)
+
+    Settings.MoveMouseDelay = <span class="dig">0.5</span>
+
+    <span class="kw">return</span> True
+
+
+
+<span class="kw">def</span> finishBattleAndGoHome():
+    <span class="cmt"># TODO: Collect (via OCR) stats about the battle
+</span>    <span class="cmt">#       and record them for later analysis and review
+</span>    cocWindow.<span class="skw">wait</span>(<img src="1420266239930.png" />, FOREVER)
+    cocWindow.getLastMatch().<span class="skw">click</span>()
+    updateTimestamp(<span class="str">'_lastInteraction'</span>)
+
+    <span class="kw">return</span> True
+
+
+
+<span class="kw">def</span> trainTroops(troops):
+    <span class="cmt"># Routine to train troops for attack
+</span>    <span class="cmt"># - Train equal amount across all barracks
+</span>    <span class="cmt"># -- 45 Barbs, 45 Archers, 3/2 Wallbreakers
+</span>    <span class="cmt">#
+</span>    <span class="cmt"># - Set timer for 24 minutes to begin next attack
+</span>    <span class="kw">print</span> <span class="str">"[+] Training new troops"</span>
+
+    village = Region((cocWindow.x + <span class="dig">210</span>), (cocWindow.y + <span class="dig">85</span>), <span class="dig">1025</span>, <span class="dig">790</span>)
+
+    <span class="cmt"># Divide up the troops that need to be trained
+</span>    <span class="cmt"># between the 4 barracks we have to train with
+</span>    <span class="cmt">#
+</span>    <span class="cmt"># 0 = Barbarians
+</span>    <span class="cmt"># 1 = Archers
+</span>    <span class="cmt"># 2 = Giants
+</span>    <span class="cmt"># 3 = Goblins
+</span>    <span class="cmt"># 4 = Wall Breakers
+</span>    <span class="cmt"># 5 = Balloons
+</span>    <span class="cmt"># 6 = Wizards
+</span>    <span class="cmt"># 7 = Healers
+</span>    <span class="cmt"># 8 = Dragons
+</span>    <span class="cmt"># 9 = PEKKAs
+</span>    theBarracks = [
+        [<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>],
+        [<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>],
+        [<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>],
+        [<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>,<span class="dig">0</span>]
+    ]
+    totalTroops = <span class="dig">0</span>
+
+    <span class="kw">for</span> (index, count) <span class="kw">in</span> enumerate(troops):
+        theBarracks[<span class="dig">0</span>][index] = floor((count / <span class="dig">4</span>))
+        theBarracks[<span class="dig">1</span>][index] = floor((count / <span class="dig">4</span>))
+        theBarracks[<span class="dig">2</span>][index] = floor((count / <span class="dig">4</span>))
+        theBarracks[<span class="dig">3</span>][index] = floor((count / <span class="dig">4</span>))
+
+        totalTroops += count
+
+        <span class="kw">if</span> (count % <span class="dig">4</span> &gt; <span class="dig">0</span>):
+            <span class="kw">for</span> i <span class="kw">in</span> range(<span class="dig">0</span>, (count % <span class="dig">4</span>)):
+                j = barracksWithLeastTroops(theBarracks)
+                theBarracks[j][index] += <span class="dig">1</span>
+
+    <span class="kw">if</span> totalTroops == <span class="dig">0</span>:
+        <span class="kw">return</span>
+
+    <span class="kw">try</span>:
+        village.<span class="skw">find</span>(Pattern(<img src="1420482460039.png" />).similar(<span class="dig">0.90</span>)).<span class="skw">click</span>()
+        updateTimestamp(<span class="str">'_lastInteraction'</span>)
+        cocWindow.<span class="skw">find</span>(<img src="1420240132902.png" />).<span class="skw">click</span>()
+        updateTimestamp(<span class="str">'_lastInteraction'</span>)
+        <span class="skw">sleep</span>(<span class="dig">0.5</span>)
+
+        <span class="kw">for</span> i <span class="kw">in</span> range(<span class="dig">0</span>, <span class="dig">4</span>):
+            <span class="kw">for</span> (index, qty) <span class="kw">in</span> enumerate(theBarracks[i]):
+                <span class="kw">if</span> qty &gt; <span class="dig">0</span>:
+                    <span class="kw">if</span> index == <span class="dig">0</span>:
+                        target = village.<span class="skw">find</span>(<img src="1420250869807.png" />)     <span class="cmt"># Barbarians</span>
+                    <span class="kw">elif</span> index == <span class="dig">1</span>:
+                        target = village.<span class="skw">find</span>(<img src="1420250654873.png" />)     <span class="cmt"># Archers</span>
+                    <span class="kw">elif</span> index == <span class="dig">2</span>:
+                        target = village.<span class="skw">find</span>(<img src="1420250670215.png" />)     <span class="cmt"># Giants</span>
+                    <span class="kw">elif</span> index == <span class="dig">3</span>:
+                        target = village.<span class="skw">find</span>(<img src="1420250688621.png" />)     <span class="cmt"># Goblins</span>
+                    <span class="kw">elif</span> index == <span class="dig">4</span>:
+                        target = village.<span class="skw">find</span>(<img src="1420250704041.png" />)     <span class="cmt"># Wallbreakers</span>
+                    <span class="kw">elif</span> index == <span class="dig">5</span>:
+                        target = village.<span class="skw">find</span>(<img src="1420250742705.png" />)     <span class="cmt"># Balloons</span>
+                    <span class="kw">elif</span> index == <span class="dig">6</span>:
+                        target = village.<span class="skw">find</span>(<img src="1420250763244.png" />)     <span class="cmt"># Wizards</span>
+                    <span class="kw">elif</span> index == <span class="dig">7</span>:
+                        target = village.<span class="skw">find</span>(<img src="1420250778051.png" />)     <span class="cmt"># Healers</span>
+                    <span class="kw">elif</span> index == <span class="dig">8</span>:
+                        target = village.<span class="skw">find</span>(<img src="1420250807972.png" />)     <span class="cmt"># Dragons</span>
+                    <span class="kw">elif</span> index == <span class="dig">9</span>:
+                        target = village.<span class="skw">find</span>(<img src="1420250835413.png" />)     <span class="cmt"># PEKKAs</span>
+                    <span class="kw">else</span>:
+                        <span class="kw">print</span> <span class="str">"Invalid index: "</span>, index
+
+                    Settings.MoveMouseDelay = <span class="dig">0.05</span>
+
+                    <span class="kw">for</span> n <span class="kw">in</span> range(<span class="dig">0</span>, qty):
+                        target.<span class="skw">click</span>()
+
+                    updateTimestamp(<span class="str">'_lastInteraction'</span>)
+
+                    Settings.MoveMouseDelay = <span class="dig">0.5</span>
+
+            village.<span class="skw">find</span>(<img src="1420308052116.png" />).<span class="skw">click</span>()
+            updateTimestamp(<span class="str">'_lastInteraction'</span>)
+            <span class="skw">sleep</span>(<span class="dig">0.5</span>)
+
+        village.<span class="skw">find</span>(<img src="1420240870546.png" />).<span class="skw">click</span>()
+
+        updateTimestamp(<span class="str">'_lastInteraction'</span>)
+        updateTimestamp(<span class="str">'trainTroops'</span>)
+
+        <span class="skw">sleep</span>(<span class="dig">0.5</span>)
+
+    <span class="kw">except</span>:
+        <span class="kw">print</span> <span class="str">"Error training new troops"</span>
+        <span class="kw">print</span> sys.exc_info()[<span class="dig">0</span>]
+        <span class="kw">print</span> sys.exc_info()[<span class="dig">1</span>]
+
+
+
+<span class="kw">def</span> barracksWithLeastTroops(barracks):
+    lowest_time = calcTrainTime(barracks[<span class="dig">0</span>])
+    lowest_i = <span class="dig">0</span>;
+
+    <span class="kw">for</span> (i, barrack) <span class="kw">in</span> enumerate(barracks):
+        time = calcTrainTime(barrack)
+        <span class="kw">if</span> time &lt; lowest_time:
+            lowest_i = i;
+            lowest_time = time
+
+    <span class="kw">return</span> lowest_i
+
+
+
+<span class="kw">def</span> calcTrainTime(barrack):
+    time = <span class="dig">0</span>
+
+    <span class="kw">for</span> (i, count) <span class="kw">in</span> enumerate(barrack):
+        time += (count * trainTimes[i])
+
+    <span class="kw">return</span> time
+
+
+
+<span class="kw">def</span> donateTroops():
+    <span class="cmt"># Routine to donate troops to clan members
+</span>    <span class="cmt"># - Open sidebar
+</span>    <span class="cmt"># - Find/click [Donate] button(s)
+</span>    <span class="cmt"># - Donate troops (Archers?) until icon is gray
+</span>    <span class="cmt"># - Track troops donated
+</span>    <span class="cmt"># - Retrain donated troops
+</span>    <span class="cmt"># - Update timers (_lastInteraction, donate, buildTroops, etc.)
+</span>    donations = <span class="dig">0</span>
+    fSidebar()
+
+    <span class="kw">try</span>:
+        <span class="kw">for</span> donate <span class="kw">in</span> cocWindow.findAll(Pattern(<img src="1420237685511.png" />).similar(<span class="dig">0.80</span>)):
+            donate.<span class="skw">click</span>()
+            updateTimestamp(<span class="str">'_lastInteraction'</span>)
+            <span class="skw">sleep</span>(<span class="dig">1</span>)
+            donateDialog = Region((donate.x + <span class="dig">88</span>), (donate.y - <span class="dig">175</span>), <span class="dig">765</span>, <span class="dig">435</span>)
+            Settings.MoveMouseDelay = <span class="dig">0</span>
+
+            <span class="kw">while</span> donateDialog.exists(Pattern(<img src="1420238079816.png" />).similar(<span class="dig">0.90</span>), <span class="dig">0</span>):
+                donateDialog.getLastMatch().<span class="skw">click</span>()
+                donations += <span class="dig">1</span>
+                updateTimestamp(<span class="str">'_lastInteraction'</span>)
+                <span class="skw">sleep</span>(<span class="dig">0.5</span>)
+
+            Settings.MoveMouseDelay = <span class="dig">0.5</span>
+
+            <span class="kw">print</span> <span class="str">"Donated "</span>, donations, <span class="str">" archers"</span>
+    <span class="kw">except</span>:
+        <span class="kw">print</span> <span class="str">"[-] Nobody has asked for donations. Moving on."</span>
+        <span class="cmt"># print sys.exc_info()[0]
+</span>        <span class="cmt"># print sys.exc_info()[1]
+</span>
+    _closeSidebar()
+    updateTimestamp(<span class="str">'donateTroops'</span>)
+
+    <span class="kw">if</span> (donations &gt; <span class="dig">0</span>):
+        trainTroops({ <span class="str">'archer'</span>: donations })
+
+    <span class="kw">return</span>
+
+
+
+
+<span class="kw">def</span> _openSidebar():
+    <span class="kw">try</span>:
+        <span class="kw">if</span> cocWindow.exists(<img src="1420308399291.png" />,<span class="dig">0</span>):
+            cocWindow.getLastMatch().<span class="skw">click</span>()
+            <span class="skw">sleep</span>(<span class="dig">1</span>)
+            <span class="kw">return</span> True
+        <span class="kw">else</span>:
+            <span class="kw">print</span> <span class="str">"Sidebar opener doesn't exist"</span>
+            <span class="kw">return</span> False
+    <span class="kw">except</span>:
+        <span class="kw">print</span> <span class="str">"[!] Could not open sidebar"</span>
+        <span class="kw">return</span> False
+
+
+
+<span class="kw">def</span> _closeSidebar():
+    <span class="kw">try</span>:
+        <span class="kw">if</span> cocWindow.exists(<img src="1420238603713.png" />, <span class="dig">0</span>):
+            cocWindow.getLastMatch().<span class="skw">click</span>()
+            updateTimestamp(<span class="str">'_lastInteraction'</span>)
+            <span class="skw">sleep</span>(<span class="dig">2</span>)
+            <span class="kw">return</span> True
+        <span class="kw">else</span>:
+            <span class="kw">print</span> <span class="str">"Sidebar closer doesn't exist"</span>
+            <span class="kw">return</span> False
+    <span class="kw">except</span>:
+        <span class="kw">print</span> <span class="str">"[!] Could not close sidebar"</span>
+        <span class="kw">return</span> False
+
+
+
+<span class="kw">def</span> collectResources():
+    resources = [<img src="1420235690079.png" />, <img src="1420231189687.png" /> ,Pattern(<img src="1420230934586.png" />).similar(<span class="dig">0.80</span>)]
+
+    window = Region((cocWindow.x + <span class="dig">210</span>), (cocWindow.y + <span class="dig">85</span>), <span class="dig">1025</span>, <span class="dig">790</span>)
+
+    <span class="kw">for</span> resource <span class="kw">in</span> resources:
+        <span class="kw">try</span>:
+            <span class="kw">for</span> _temp <span class="kw">in</span> window.findAll(resource):
+                _temp.<span class="skw">click</span>()
+                updateTimestamp(<span class="str">'_lastInteraction'</span>)
+        <span class="kw">except</span>:
+            <span class="kw">print</span> <span class="str">"[!] There was an error collecting resources"</span>
+
+    updateTimestamp(<span class="str">'collectResources'</span>)
+
+    <span class="kw">return</span>
+
+
+
+<span class="cmt"># TODO
+</span><span class="kw">def</span> removeObstacles():
+    <span class="cmt"># Routine to find and remove obstacles
+</span>    <span class="kw">pass</span>
+
+
+
+<span class="cmt"># TODO
+</span><span class="kw">def</span> observeVillageStats():
+    <span class="cmt"># Routine to collect/OCR village stats
+</span>    <span class="cmt"># And return them in an array/dictionary...
+</span>    <span class="cmt"># Or maybe right them to a file?
+</span>    <span class="kw">pass</span>
+
+
+
+<span class="cmt"># Starts BlueStacks Player
+</span><span class="cmt"># Opens Clash of Clans app
+</span><span class="cmt"># Centers village on the screen
+</span><span class="cmt">#
+</span><span class="cmt"># Returns: True if succeeded, False if anything failed
+</span><span class="kw">def</span> startClashOfClans():
+    startAndFocusApp()
+    waitVanish(<img src="1420181477444.png" />, FOREVER)
+    <span class="skw">sleep</span>(<span class="dig">3</span>)
+
+    cocWindow = App(<span class="str">"Bluestacks"</span>).window(<span class="dig">0</span>)
+    recentApps = Region((cocWindow.x + <span class="dig">8</span>), (cocWindow.y + <span class="dig">110</span>), <span class="dig">1430</span>, <span class="dig">150</span>)
+
+    <span class="kw">try</span>:
+        recentApps.<span class="skw">find</span>(Pattern(<img src="1420182034354.png" />).exact()).<span class="skw">click</span>()
+
+        cocWindow.<span class="skw">wait</span>(<img src="1420182438717.png" />, <span class="dig">30</span>)
+        cocWindow.waitVanish(<img src="1420182438717.png" />, FOREVER)
+        <span class="cmt"># cocWindow.wait("1420225678008.png", FOREVER)
+</span>
+        <span class="cmt"># Test for recent enemy raid dialog
+</span>        <span class="kw">if</span> cocWindow.exists(<img src="1420255908709.png" />):
+            cocWindow.getLastMatch().<span class="skw">click</span>()
+            updateTimestamp(<span class="str">'_lastInteraction'</span>)
+            <span class="skw">sleep</span>(<span class="dig">1</span>)
+        <span class="kw">else</span>:
+            <span class="skw">sleep</span>(<span class="dig">3</span>)
+
+        zoomOutAndCenter()
+    <span class="kw">except</span>:
+        <span class="kw">print</span> <span class="str">"[!] Could not find COC icon, assuming game is already started..."</span>
+
+    updateTimestamp(<span class="str">'start'</span>)
+
+    <span class="kw">return</span> True
+
+
+<span class="cmt"># Takes a string as arg1 and updates that
+</span><span class="cmt"># timestamp (if it exists) with the current
+</span><span class="cmt"># datetime.
+</span><span class="kw">def</span> updateTimestamp(timer):
+    <span class="kw">if</span> timer <span class="kw">in</span> timestamps:
+        timestamps[timer] = datetime.now()
+    <span class="kw">else</span>:
+        <span class="kw">print</span> <span class="str">"[!] Invalid timestamp: "</span> + timer
+
+    <span class="kw">return</span>
+
+
+
+
+<span class="cmt"># Zooms the screen all the way out
+</span><span class="cmt">#
+</span><span class="cmt"># TODO: Reliably center the village on the map
+</span><span class="cmt">#
+</span><span class="cmt"># Returns: True on success, False otherwise
+</span><span class="kw">def</span> zoomOutAndCenter():
+    <span class="kw">try</span>:
+        startAndFocusApp()
+
+        <span class="kw">print</span> <span class="str">"[+] Zooming out and centering village"</span>
+
+        <span class="skw">type</span>(<span class="str">"-"</span>, Key.CTRL)
+        <span class="skw">sleep</span>(<span class="dig">0.5</span>)
+        <span class="skw">type</span>(<span class="str">"-"</span>, Key.CTRL)
+        <span class="skw">sleep</span>(<span class="dig">0.5</span>)
+        <span class="skw">type</span> (<span class="str">"-"</span>, Key.CTRL)
+        <span class="skw">sleep</span>(<span class="dig">0.5</span>)
+
+        updateTimestamp(<span class="str">'_lastInteraction'</span>)
+    <span class="kw">except</span>:
+        <span class="kw">print</span> <span class="str">"[!] Something went wrong while trying to zoom out..."</span>
+        <span class="kw">return</span> False
+
+    <span class="kw">return</span> True
+
+
+
+<span class="kw">def</span> startAndFocusApp():
+    <span class="kw">try</span>:
+        switchApp(<span class="str">"C:\Program Files (x86)\BlueStacks\HD-StartLauncher.exe"</span>)
+        <span class="skw">sleep</span>(<span class="dig">1</span>)
+    <span class="kw">except</span>:
+        <span class="kw">print</span> <span class="str">"[!] Could not start/focus the BlueStacks Player"</span>
+        <span class="kw">return</span> False
+
+    <span class="kw">return</span> True
+
+
+
+<span class="cmt"># Checks to see if we've been kicked for being idle
+</span><span class="cmt"># If so, it will reload the game and reset the village
+</span><span class="cmt"># so we can pick up where we left off.
+</span><span class="cmt">#
+</span><span class="cmt"># TODO: Check for recent attack dialog when we return to from idle
+</span><span class="kw">def</span> checkIdle():
+    <span class="kw">if</span> (cocWindow.exists(<img src="1420184045669.png" />, <span class="dig">0</span>)):
+        cocWindow.<span class="skw">find</span>(<img src="1420184095574.png" />).<span class="skw">click</span>()
+
+        cocWindow.<span class="skw">wait</span>(<img src="1420182438717.png" />, <span class="dig">60</span>)
+        cocWindow.waitVanish(<img src="1420182438717.png" />, FOREVER)
+
+        <span class="skw">sleep</span>(<span class="dig">2</span>)
+
+        zoomOutAndCenter()
+
+        <span class="kw">return</span> True
+    <span class="kw">else</span>:
+        <span class="kw">return</span> False
+
+
+
+<span class="kw">def</span> preventIdle():
+    <span class="kw">try</span>:
+        <span class="cmt">#cocWindow.find("1420776357181.png").click()
+</span>        <span class="cmt">#updateTimestamp('_lastInteraction')
+</span>        <span class="cmt">#sleep(2)
+</span>        <span class="cmt">#cocWindow.find("1420240870546.png").click()
+</span>        <span class="cmt">#updateTimestamp('_lastInteraction')
+</span>        <span class="cmt">#sleep(2)
+</span>
+        <span class="kw">if</span> _openSidebar() == True:
+            <span class="skw">sleep</span>(<span class="dig">5</span>)
+
+            <span class="kw">if</span> _closeSidebar() == True:
+                <span class="kw">return</span> True
+
+    <span class="kw">except</span>:
+        <span class="kw">print</span> <span class="str">"[!] Error trying to prevent idle"</span>
+
+
+
+<span class="kw">def</span> testOcr():
+    <span class="kw">try</span>:
+        goldRegion = selectRegion(<span class="str">"Select Loot"</span>)
+        gold = numberOCR(goldRegion, <span class="str">'opponentLoot'</span>)
+
+        <span class="kw">print</span> <span class="str">"Loot: "</span>, gold
+
+    <span class="kw">except</span>:
+        <span class="kw">print</span> <span class="str">"Failed :("</span>
+        <span class="kw">print</span> sys.exc_info()[<span class="dig">0</span>]
+        <span class="kw">print</span> sys.exc_info()[<span class="dig">1</span>]
+
+    <span class="kw">return</span>
+
+
+
+<span class="kw">def</span> numberOCR(Reg, ocrType):
+    <span class="kw">if</span> ocrType == <span class="str">'opponentLoot'</span>:
+        numberImages = [Pattern(<img src="oppLoot_0.png" />).exact(),Pattern(<img src="oppLoot_1.png" />).exact(),Pattern(<img src="oppLoot_2.png" />).exact(),Pattern(<img src="oppLoot_3.png" />).similar(<span class="dig">0.95</span>),Pattern(<img src="oppLoot_4.png" />).similar(<span class="dig">0.95</span>),Pattern(<img src="oppLoot_5.png" />).exact(),Pattern(<img src="oppLoot_6.png" />).exact(),Pattern(<img src="oppLoot_7.png" />).similar(<span class="dig">0.95</span>),Pattern(<img src="oppLoot_8.png" />).exact(),Pattern(<img src="oppLoot_9.png" />).exact()]
+    <span class="kw">elif</span> ocrType == <span class="str">'myLoot'</span>:
+        numberImages = [Pattern(<img src="myLoot_0.png" />).exact(),Pattern(<img src="myLoot_1.png" />).exact(),Pattern(<img src="myLoot_2.png" />).exact(),Pattern(<img src="myLoot_3.png" />).similar(<span class="dig">0.95</span>),Pattern(<img src="myLoot_4.png" />).similar(<span class="dig">0.95</span>),Pattern(<img src="myLoot_5.png" />).exact(),Pattern(<img src="myLoot_6.png" />).exact(),Pattern(<img src="myLoot_7.png" />).similar(<span class="dig">0.95</span>),Pattern(<img src="myLoot_8.png" />).exact(),Pattern(<img src="myLoot_9.png" />).exact()]
+
+    digitalNumber = <span class="dig">0</span>
+    resultList = list()
+
+    <span class="cmt"># Reg.highlight(1)
+</span>
+    <span class="kw">for</span> x <span class="kw">in</span> numberImages:
+        <span class="kw">if</span> Reg.exists(x,<span class="dig">0</span>):
+            Reg.findAll(x)
+            <span class="cmt">#digital find result into list            
+</span>            digitalList = list(Reg.getLastMatches())
+            <span class="cmt">#convert list into tuple(image, digital)
+</span>            <span class="kw">for</span> y <span class="kw">in</span> digitalList:
+                <span class="cmt">#resultList.append(tuple(y,0))
+</span>                t = (y,digitalNumber)
+                resultList.append(t)
+        digitalNumber = digitalNumber+<span class="dig">1</span>
+    sortedResultList = sorted(resultList,key=<span class="kw">lambda</span> x: x[<span class="dig">0</span>].x)
+    <span class="cmt">#print sortedResultList
+</span>    ret = <span class="dig">0</span>
+    listLen = len(sortedResultList)
+    <span class="kw">for</span> x, i <span class="kw">in</span> enumerate(sortedResultList):
+        ret += <span class="dig">10</span> **(listLen - x - <span class="dig">1</span>) * i[<span class="dig">1</span>]
+    <span class="kw">return</span> ret
+
+
+
+<span class="kw">def</span> secondsSinceLast(ts):
+    diff = datetime.now() - ts;
+
+    <span class="kw">return</span> diff.seconds
+
+
+
+<span class="kw">def</span> timeToTrainArmy():
+    <span class="kw">return</span> <span class="dig">1455</span>
+
+
+
+<span class="cmt"># Main "game loop"
+</span><span class="kw">if</span> (startClashOfClans() == True):
+    <span class="kw">print</span> <span class="str">"Clash of Clans has started and is ready to go!"</span>
+
+    <span class="kw">while</span> (True):
+        <span class="cmt"># Make sure we weren't kicked for being idle
+</span><span class="cmt">#        print "[+] Idle Check"
+</span><span class="cmt">#        checkIdle()
+</span>
+<span class="cmt">#        # Collect resources every 10 minutes
+</span><span class="cmt">#        if ((timestamps['collectResources'] == False) or (secondsSinceLast(timestamps['collectResources']) &gt; 600)):
+</span><span class="cmt">#            print "[+] Time to collect resources"
+</span><span class="cmt">#            collectResources()
+</span><span class="cmt">#        else:
+</span><span class="cmt">#            print "[INFO] Time since last collected resources: ", secondsSinceLast(timestamps['collectResources']), "/ 600"
+</span>
+<span class="cmt">#        # Donate troops every 5 minutes
+</span><span class="cmt">#        if ((timestamps['donateTroops'] == False) or (secondsSinceLast(timestamps['donateTroops']) &gt; 300)):
+</span><span class="cmt">#            print "[+] Time to donate troops"
+</span><span class="cmt">#            donateTroops()
+</span>
+        <span class="cmt"># Train new troops and attack after the last trainTroops() finishes
+</span>        <span class="kw">if</span> ((timestamps[<span class="str">'trainTroops'</span>] == False) <span class="kw">or</span> (secondsSinceLast(timestamps[<span class="str">'trainTroops'</span>]) &gt; timeToTrainArmy())):
+            <span class="kw">print</span> <span class="str">"+-------------------------------------------------------+"</span>
+            <span class="kw">print</span> <span class="str">"|                                                       |"</span>
+            <span class="kw">print</span> <span class="str">"|                       WARNING                         |"</span>
+            <span class="kw">print</span> <span class="str">"|                                                       |"</span>
+            <span class="kw">print</span> <span class="str">"+-------------------------------------------------------+"</span>
+            <span class="kw">print</span> <span class="str">""</span>
+
+            <span class="skw">sleep</span>(<span class="dig">2</span>)
+
+            <span class="kw">print</span> <span class="str">"+-------------------------------------------------------+"</span>
+            <span class="kw">print</span> <span class="str">"|                                                       |"</span>
+            <span class="kw">print</span> <span class="str">"|                       WARNING                         |"</span>
+            <span class="kw">print</span> <span class="str">"|                                                       |"</span>
+            <span class="kw">print</span> <span class="str">"+-------------------------------------------------------+"</span>
+            <span class="kw">print</span> <span class="str">""</span>
+
+            <span class="skw">sleep</span>(<span class="dig">2</span>)
+
+            <span class="kw">print</span> <span class="str">"+-------------------------------------------------------+"</span>
+            <span class="kw">print</span> <span class="str">"|                                                       |"</span>
+            <span class="kw">print</span> <span class="str">"|                       WARNING                         |"</span>
+            <span class="kw">print</span> <span class="str">"|                                                       |"</span>
+            <span class="kw">print</span> <span class="str">"+-------------------------------------------------------+"</span>
+            <span class="kw">print</span> <span class="str">""</span>
+
+            startAndFocusApp()
+
+            <span class="skw">sleep</span>(<span class="dig">10</span>)
+
+            <span class="kw">print</span> <span class="str">"[+] Idle Check"</span>
+            checkIdle()
+
+            <span class="skw">sleep</span>(<span class="dig">5</span>)
+
+            <span class="kw">print</span> <span class="str">"[+] Time to train troops and attack"</span>
+            trainTroops(myArmy)
+            attack()
+        <span class="kw">else</span>:
+            <span class="kw">print</span> <span class="str">"[INFO] Time since troops were trained: "</span>, secondsSinceLast(timestamps[<span class="str">'trainTroops'</span>]), <span class="str">"/"</span>, timeToTrainArmy()
+
+<span class="cmt">#        # Perform an interaction with the game to prevent idling out if 30 seconds has passed with no interaction
+</span><span class="cmt">#        if ((timestamps['_lastInteraction'] == False) or (secondsSinceLast(timestamps['_lastInteraction']) &gt; 60)):
+</span><span class="cmt">#            print "[+] Interacting with the screen to prevent getting kicked for too much idle time"
+</span><span class="cmt">#            if preventIdle() == False:
+</span><span class="cmt">#                print "Something went wrong, aborting in case Sidebar didn't close."
+</span><span class="cmt">#                break
+</span><span class="cmt">#        else:
+</span><span class="cmt">#            print "[INFO] Time since last interaction: ", secondsSinceLast(timestamps['_lastInteraction'])
+</span>
+        <span class="cmt"># Sleep 20 seconds before running the loop again
+</span>        <span class="skw">sleep</span>(<span class="dig">60</span>)
+
+
+<span class="cmt"># collectResources()
+</span><span class="cmt"># donateTroops()
+</span><span class="cmt"># trainTroops(myArmy)
+</span><span class="cmt"># attack()</span>
+</pre>
+</body>
+</html>
